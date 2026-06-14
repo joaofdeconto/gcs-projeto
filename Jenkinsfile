@@ -15,7 +15,7 @@ pipeline {
                 echo '==> Instalando dependências PHP...'
                 sh '''
                     docker run --rm \
-                        -v ${WORKSPACE}/app:/app \
+                        -v $(pwd)/app:/app \
                         -w /app \
                         composer:latest composer install --no-interaction --prefer-dist
                 '''
@@ -34,7 +34,7 @@ pipeline {
                 echo '==> Executando 20 testes automatizados com PHPUnit...'
                 sh '''
                     docker run --rm \
-                        -v ${WORKSPACE}/app:/app \
+                        -v $(pwd)/app:/app \
                         -w /app \
                         php:8.2-cli \
                         vendor/bin/phpunit --configuration phpunit.xml --testdox
@@ -48,7 +48,7 @@ pipeline {
                 sh '''
                     docker run --rm \
                         --network jenkins_gcs_ci \
-                        -v ${WORKSPACE}/app:/app \
+                        -v $(pwd)/app:/app \
                         -w /app \
                         sonarsource/sonar-scanner-cli \
                         sonar-scanner \
@@ -66,10 +66,10 @@ pipeline {
             steps {
                 echo '==> Atualizando ambiente de Homologação...'
                 sh '''
-                    cp ${WORKSPACE}/app/.env.homolog ${WORKSPACE}/app/.env
-                    docker compose -f ${WORKSPACE}/docker/homolog/docker-compose.yml up -d --build
+                    cp $(pwd)/app/.env.homolog $(pwd)/app/.env
+                    docker compose -f $(pwd)/docker/homolog/docker-compose.yml up -d --build
                     sleep 15
-                    docker compose -f ${WORKSPACE}/docker/homolog/docker-compose.yml exec -T app_homolog php artisan migrate --force
+                    docker compose -f $(pwd)/docker/homolog/docker-compose.yml exec -T app_homolog php artisan migrate --force
                 '''
             }
         }
@@ -82,10 +82,10 @@ pipeline {
             steps {
                 echo '==> Atualizando ambiente de Produção...'
                 sh '''
-                    cp ${WORKSPACE}/app/.env.prod ${WORKSPACE}/app/.env
-                    docker compose -f ${WORKSPACE}/docker/prod/docker-compose.yml up -d --build
+                    cp $(pwd)/app/.env.prod $(pwd)/app/.env
+                    docker compose -f $(pwd)/docker/prod/docker-compose.yml up -d --build
                     sleep 15
-                    docker compose -f ${WORKSPACE}/docker/prod/docker-compose.yml exec -T app_prod php artisan migrate --force
+                    docker compose -f $(pwd)/docker/prod/docker-compose.yml exec -T app_prod php artisan migrate --force
                 '''
             }
         }
