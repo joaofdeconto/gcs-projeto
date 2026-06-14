@@ -1,0 +1,5 @@
+app/vendor/
+app/.env
+app/coverage/
+app/bootstrap/cache/*.php
+app/storage/logs/*.log
