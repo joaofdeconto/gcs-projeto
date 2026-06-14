@@ -2,9 +2,10 @@ pipeline {
     agent any
 
     environment {
-        COMPOSE_HOMOLOG = 'docker/homolog/docker-compose.yml'
-        COMPOSE_PROD    = 'docker/prod/docker-compose.yml'
-        SONAR_URL       = 'http://sonarqube:9000'
+        WORKSPACE_APP = "${WORKSPACE}/app"
+        COMPOSE_HOMOLOG = "${WORKSPACE}/docker/homolog/docker-compose.yml"
+        COMPOSE_PROD    = "${WORKSPACE}/docker/prod/docker-compose.yml"
+        SONAR_URL       = 'http://gcs_sonarqube:9000'
     }
 
     stages {
@@ -19,7 +20,7 @@ pipeline {
         stage('B - Instalação de Dependências') {
             steps {
                 echo '==> Instalando dependências PHP...'
-                sh 'docker run --rm -v $(pwd)/app:/app -w /app composer:latest composer install --no-interaction --prefer-dist'
+                sh 'docker run --rm -v ${WORKSPACE_APP}:/app -w /app composer:latest composer install --no-interaction --prefer-dist'
             }
         }
 
@@ -35,17 +36,11 @@ pipeline {
                 echo '==> Executando 20 testes automatizados com PHPUnit...'
                 sh '''
                     docker run --rm \
-                        -v $(pwd)/app:/app \
+                        -v ${WORKSPACE_APP}:/app \
                         -w /app \
                         php:8.2-cli \
                         vendor/bin/phpunit --configuration phpunit.xml --testdox
                 '''
-            }
-            post {
-                always {
-                    echo '==> Publicando relatório de testes...'
-                    junit 'app/coverage/junit.xml'
-                }
             }
         }
 
@@ -54,17 +49,17 @@ pipeline {
                 echo '==> Analisando qualidade de código com SonarQube...'
                 sh '''
                     docker run --rm \
-                        --network gcs_ci \
-                        -v $(pwd)/app:/app \
+                        --network jenkins_gcs_ci \
+                        -v ${WORKSPACE_APP}:/app \
                         -w /app \
                         sonarsource/sonar-scanner-cli \
                         sonar-scanner \
-                            -Dsonar.host.url=${SONAR_URL} \
                             -Dsonar.projectKey=gcs-projeto \
                             -Dsonar.sources=app,routes,database \
                             -Dsonar.tests=tests \
-                            -Dsonar.php.coverage.reportPaths=coverage/clover.xml \
-                            -Dsonar.php.tests.reportPath=coverage/junit.xml
+                            -Dsonar.host.url=${SONAR_URL} \
+                            -Dsonar.login=admin \
+                            -Dsonar.password=admin
                 '''
             }
         }
@@ -73,9 +68,9 @@ pipeline {
             steps {
                 echo '==> Atualizando ambiente de Homologação...'
                 sh '''
-                    cp app/.env.homolog app/.env
+                    cp ${WORKSPACE_APP}/.env.homolog ${WORKSPACE_APP}/.env
                     docker compose -f ${COMPOSE_HOMOLOG} up -d --build
-                    sleep 10
+                    sleep 15
                     docker compose -f ${COMPOSE_HOMOLOG} exec -T app_homolog php artisan migrate --force
                 '''
             }
@@ -89,9 +84,9 @@ pipeline {
             steps {
                 echo '==> Atualizando ambiente de Produção...'
                 sh '''
-                    cp app/.env.prod app/.env
+                    cp ${WORKSPACE_APP}/.env.prod ${WORKSPACE_APP}/.env
                     docker compose -f ${COMPOSE_PROD} up -d --build
-                    sleep 10
+                    sleep 15
                     docker compose -f ${COMPOSE_PROD} exec -T app_prod php artisan migrate --force
                 '''
             }
