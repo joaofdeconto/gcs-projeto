@@ -14,8 +14,9 @@ pipeline {
             steps {
                 echo '==> Instalando dependências PHP...'
                 sh '''
+                    APP_PATH=/home/univates/gcs-projeto/jenkins/workspace/gcs-pipeline/app
                     docker run --rm \
-                        -v $(pwd)/app:/app \
+                        -v $APP_PATH:/app \
                         -w /app \
                         composer:latest composer install --no-interaction --prefer-dist
                 '''
@@ -33,8 +34,9 @@ pipeline {
             steps {
                 echo '==> Executando 20 testes automatizados com PHPUnit...'
                 sh '''
+                    APP_PATH=/home/univates/gcs-projeto/jenkins/workspace/gcs-pipeline/app
                     docker run --rm \
-                        -v $(pwd)/app:/app \
+                        -v $APP_PATH:/app \
                         -w /app \
                         php:8.2-cli \
                         vendor/bin/phpunit --configuration phpunit.xml --testdox
@@ -46,9 +48,10 @@ pipeline {
             steps {
                 echo '==> Analisando qualidade de código com SonarQube...'
                 sh '''
+                    APP_PATH=/home/univates/gcs-projeto/jenkins/workspace/gcs-pipeline/app
                     docker run --rm \
                         --network jenkins_gcs_ci \
-                        -v $(pwd)/app:/app \
+                        -v $APP_PATH:/app \
                         -w /app \
                         sonarsource/sonar-scanner-cli \
                         sonar-scanner \
@@ -66,10 +69,11 @@ pipeline {
             steps {
                 echo '==> Atualizando ambiente de Homologação...'
                 sh '''
-                    cp $(pwd)/app/.env.homolog $(pwd)/app/.env
-                    docker compose -f $(pwd)/docker/homolog/docker-compose.yml up -d --build
+                    WS=/home/univates/gcs-projeto/jenkins/workspace/gcs-pipeline
+                    cp $WS/app/.env.homolog $WS/app/.env
+                    docker compose -f $WS/docker/homolog/docker-compose.yml up -d --build
                     sleep 15
-                    docker compose -f $(pwd)/docker/homolog/docker-compose.yml exec -T app_homolog php artisan migrate --force
+                    docker compose -f $WS/docker/homolog/docker-compose.yml exec -T app_homolog php artisan migrate --force
                 '''
             }
         }
@@ -82,10 +86,11 @@ pipeline {
             steps {
                 echo '==> Atualizando ambiente de Produção...'
                 sh '''
-                    cp $(pwd)/app/.env.prod $(pwd)/app/.env
-                    docker compose -f $(pwd)/docker/prod/docker-compose.yml up -d --build
+                    WS=/home/univates/gcs-projeto/jenkins/workspace/gcs-pipeline
+                    cp $WS/app/.env.prod $WS/app/.env
+                    docker compose -f $WS/docker/prod/docker-compose.yml up -d --build
                     sleep 15
-                    docker compose -f $(pwd)/docker/prod/docker-compose.yml exec -T app_prod php artisan migrate --force
+                    docker compose -f $WS/docker/prod/docker-compose.yml exec -T app_prod php artisan migrate --force
                 '''
             }
         }
