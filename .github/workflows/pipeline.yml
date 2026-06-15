@@ -29,6 +29,16 @@ jobs:
       - name: "C - Versionamento"
         run: git log --oneline -5
 
+      - name: Preparar diretórios Laravel
+        run: |
+          mkdir -p app/bootstrap/cache
+          mkdir -p app/storage/framework/cache
+          mkdir -p app/storage/framework/sessions
+          mkdir -p app/storage/framework/views
+          mkdir -p app/storage/logs
+          chmod -R 777 app/bootstrap/cache
+          chmod -R 777 app/storage
+
       - name: "D - Testes Automatizados"
         run: |
           cd app
@@ -39,8 +49,7 @@ jobs:
           cd app
           vendor/bin/phpcs --standard=PSR12 --report=summary \
             app/Http/Controllers/ \
-            app/Models/ \
-            --ignore=vendor/
+            app/Models/
         continue-on-error: true
 
       - name: "F - Deploy Homologação"
