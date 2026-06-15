@@ -39,7 +39,7 @@ pipeline {
                         -v $APP_PATH:/app \
                         -w /app \
                         php:8.4-cli \
-                        vendor/bin/phpunit --configuration phpunit.xml --testdox
+                        vendor/bin/phpunit --configuration phpunit.xml --testdox --no-coverage
                 '''
             }
         }
