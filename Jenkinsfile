@@ -18,7 +18,7 @@ pipeline {
                     docker run --rm \
                         -v $APP_PATH:/app \
                         -w /app \
-                        composer:latest composer install --no-interaction --prefer-dist --no-blocking
+                        composer:latest composer update --no-interaction --prefer-dist --no-blocking
                 '''
             }
         }
@@ -35,12 +35,6 @@ pipeline {
                 echo '==> Executando 20 testes automatizados com PHPUnit...'
                 sh '''
                     APP_PATH=/home/univates/gcs-projeto/jenkins/workspace/gcs-pipeline/app
-                    mkdir -p $APP_PATH/bootstrap/cache
-                    mkdir -p $APP_PATH/storage/framework/cache
-                    mkdir -p $APP_PATH/storage/framework/sessions
-                    mkdir -p $APP_PATH/storage/framework/views
-                    chmod -R 777 $APP_PATH/bootstrap/cache
-                    chmod -R 777 $APP_PATH/storage
                     docker run --rm \
                         -v $APP_PATH:/app \
                         -w /app \
