@@ -18,7 +18,7 @@ pipeline {
                     docker run --rm \
                         -v $APP_PATH:/app \
                         -w /app \
-                        composer:latest composer install --no-interaction --prefer-dist --no-audit
+                        composer:latest composer install --no-interaction --prefer-dist --no-blocking
                 '''
             }
         }
