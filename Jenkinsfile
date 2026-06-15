@@ -53,7 +53,7 @@ pipeline {
                         --network jenkins_gcs_ci \
                         -v $APP_PATH:/app \
                         -w /app \
-                        sonarsource/sonar-scanner-cli \
+                        sonarsource/sonar-scanner-cli:4.8 \
                         sonar-scanner \
                             -Dsonar.projectKey=gcs-projeto \
                             -Dsonar.sources=app,routes,database \
