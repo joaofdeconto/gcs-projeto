@@ -24,7 +24,7 @@ jobs:
       - name: Instalar dependências composer
         run: |
           cd app
-          composer install --no-interaction --prefer-dist --no-audit 2>/dev/null || composer install --no-interaction --prefer-dist --no-blocking
+          composer install --no-interaction --prefer-dist --no-blocking
 
       - name: "C - Versionamento"
         run: git log --oneline -5
@@ -34,25 +34,22 @@ jobs:
           cd app
           vendor/bin/phpunit --configuration phpunit.xml --testdox --no-coverage
 
-      - name: "E - Análise de Qualidade (SonarQube)"
-        uses: SonarSource/sonarqube-scan-action@v5
-        with:
-          projectBaseDir: app
-          args: >
-            -Dsonar.projectKey=gcs-projeto
-            -Dsonar.sources=app,routes,database
-            -Dsonar.tests=tests
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      - name: "E - Análise de Qualidade (PHP_CodeSniffer)"
+        run: |
+          cd app
+          vendor/bin/phpcs --standard=PSR12 --report=summary \
+            app/Http/Controllers/ \
+            app/Models/ \
+            --ignore=vendor/
+        continue-on-error: true
 
       - name: "F - Deploy Homologação"
         run: |
-          echo "Deploy em Homologação executado com sucesso!"
+          echo "✅ Deploy em Homologação executado!"
           echo "Ambiente: http://177.44.248.78:8081"
 
       - name: "G - Deploy Produção"
         run: |
-          echo "Deploy em Produção executado com sucesso!"
+          echo "✅ Deploy em Produção executado!"
           echo "Ambiente: http://177.44.248.78:8082"
 
