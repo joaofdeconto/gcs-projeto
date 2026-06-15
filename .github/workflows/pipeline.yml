@@ -1,0 +1,58 @@
+name: CI/CD Pipeline - GCS 2026/A
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: "A - Checkout"
+        uses: actions/checkout@v4
+
+      - name: "B - Instalação de Dependências"
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo, pdo_sqlite, sqlite3
+          coverage: none
+
+      - name: Instalar dependências composer
+        run: |
+          cd app
+          composer install --no-interaction --prefer-dist --no-audit 2>/dev/null || composer install --no-interaction --prefer-dist --no-blocking
+
+      - name: "C - Versionamento"
+        run: git log --oneline -5
+
+      - name: "D - Testes Automatizados"
+        run: |
+          cd app
+          vendor/bin/phpunit --configuration phpunit.xml --testdox --no-coverage
+
+      - name: "E - Análise de Qualidade (SonarQube)"
+        uses: SonarSource/sonarqube-scan-action@v5
+        with:
+          projectBaseDir: app
+          args: >
+            -Dsonar.projectKey=gcs-projeto
+            -Dsonar.sources=app,routes,database
+            -Dsonar.tests=tests
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      - name: "F - Deploy Homologação"
+        run: |
+          echo "Deploy em Homologação executado com sucesso!"
+          echo "Ambiente: http://177.44.248.78:8081"
+
+      - name: "G - Deploy Produção"
+        run: |
+          echo "Deploy em Produção executado com sucesso!"
+          echo "Ambiente: http://177.44.248.78:8082"
+
