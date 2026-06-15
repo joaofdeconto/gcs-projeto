@@ -38,7 +38,7 @@ pipeline {
                     docker run --rm \
                         -v $APP_PATH:/app \
                         -w /app \
-                        php:8.2-cli \
+                        php:8.4-cli \
                         vendor/bin/phpunit --configuration phpunit.xml --testdox
                 '''
             }
